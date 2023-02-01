@@ -10,19 +10,19 @@ resource "aws_iam_role" "ms-cluster" {
   name = local.cluster_name
 
   assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
     {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "eks.amazonaws.com"
-                },
-                "Action": "sts:AssumeRole"
-            }
-        ]
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "eks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }
-    POLICY
+  ]
+}
+POLICY
 }
 
 resource "aws_iam_role_policy_attachment" "ms-cluster-AmazonEKSClusterPolicy" {
@@ -65,19 +65,19 @@ resource "aws_iam_role" "ms-node" {
   name = "${local.cluster_name}.node"
 
   assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
     {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {
-                    "Service": "ec2.amazonaws.com"
-                },
-                "Action": "sts:AssumeRole"
-            }
-        ]
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }
-    POLICY
+  ]
+}
+POLICY
 }
 
 #Node Policy
@@ -121,30 +121,30 @@ resource "aws_eks_node_group" "ms-node-group" {
 # Tworzenie pliku kubeconfig na podstawie utworzonego klastra
 resource "local_file" "kubeconfig" {
   content  = <<KUBECONFIG_END
-    apiVersion: v1
-    clusters:
-    - cluster:
-        certificate-authority-data: ${aws_eks_cluster.ms-up-running.certificate_authority.0.data}
-        server: ${aws_eks_cluster.ms-up-running.endpoint}
-      name: ${aws_eks_cluster.ms-up-running.arn}
-    contexts:
-    - context:
-        cluster: ${aws_eks_cluster.ms-up-running.arn}
-        user: ${aws_eks_cluster.ms-up-running.arn}
-      name: ${aws_eks_cluster.ms-up-running.arn}
-    current-context: ${aws_eks_cluster.ms-up-running.arn}
-    kind: Config
-    preferences: {}
-    users:
-    - name: ${aws_eks_cluster.ms-up-running.arn}
-      user:
-        exec:
-          apiVersion: client.authentication.k8s.io/v1alpha1
-          command: aws-iam-authenticator
-          args:
-            - "token"
-            - "-i"
-            - "${aws_eks_cluster.ms-up-running.name}
-        KUBECONFIG_END
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: ${aws_eks_cluster.ms-up-running.certificate_authority.0.data}
+    server: ${aws_eks_cluster.ms-up-running.endpoint}
+  name: ${aws_eks_cluster.ms-up-running.arn}
+contexts:
+- context:
+    cluster: ${aws_eks_cluster.ms-up-running.arn}
+    user: ${aws_eks_cluster.ms-up-running.arn}
+  name: ${aws_eks_cluster.ms-up-running.arn}
+current-context: ${aws_eks_cluster.ms-up-running.arn}
+kind: Config
+preferences: {}
+users:
+- name: ${aws_eks_cluster.ms-up-running.arn}
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1alpha1
+      command: aws-iam-authenticator
+      args:
+        - "token"
+        - "-i"
+        - "${aws_eks_cluster.ms-up-running.name}"
+    KUBECONFIG_END
   filename = "kubeconfig"
 }
